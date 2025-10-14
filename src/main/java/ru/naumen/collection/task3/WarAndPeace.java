@@ -19,31 +19,48 @@ public class WarAndPeace
     private static final Path WAR_AND_PEACE_FILE_PATH = Path.of("src/main/resources",
             "Лев_Толстой_Война_и_мир_Том_1,_2,_3,_4_(UTF-8).txt");
 
+    //Общая сложность: O(n) -> n - количество слов в файле
     public static void main(String[] args) {
+        long startTime = System.currentTimeMillis();
+        //Выбор коллекции, тк быстрая итерация
+        Map<String, Integer> wordCountMap = new LinkedHashMap<>();
 
-        Map<String, Integer> wordCount = new HashMap<>();
+        //O(n) -> n - количество слов в файле
+        new WordParser(WAR_AND_PEACE_FILE_PATH).forEachWord(word -> {
+            //Функция hashcode(определена в string) гарантирует O(1) сложность в операции
+            wordCountMap.merge(word, 1, Integer::sum);
+        });
 
-        new WordParser(WAR_AND_PEACE_FILE_PATH)
-                .forEachWord(word -> {
-                    //Функция hashcode(определена в string) гарантирует O(1) сложность в операции
-                    wordCount.merge(word, 1, Integer::sum);
-                });
+        //Выбор коллекции, тк поддерживает порядок и лучше сортировки целиком
+        //O(n) -> O(1) -> размер кучи 10
+        PriorityQueue<Map.Entry<String, Integer>> topHeap =
+                new PriorityQueue<>(11, Comparator.comparingInt(Map.Entry::getValue));
 
-        //Нужен список, для полной сортровки
-        //Полная сортировка имеет сложность O(n log n)
-        //Но тк в файле мало данных + многие результаты частот дублируются - лучшая производительность
-        List<Map.Entry<String, Integer>> sortedWords = new ArrayList<>(wordCount.entrySet());
-        sortedWords.sort(Map.Entry.<String, Integer>comparingByValue().reversed());
+        PriorityQueue<Map.Entry<String, Integer>> lastHeap =
+                new PriorityQueue<>(11, (a, b) -> b.getValue() - a.getValue());
 
-        //Быстрый доступ по индексу O(1)
-        System.out.println("TOP 10 самых частых слов:");
-        sortedWords.stream().limit(10).forEach(entry ->
-                System.out.println(entry.getKey() + ": " + entry.getValue())
-        );
+        //O(n) -> n - количество уникальных слов
+        for (Map.Entry<String, Integer> entry : wordCountMap.entrySet()) {
+            topHeap.offer(entry);//O(log n) -> O(1) -> размер кучи 10
+            if (topHeap.size() > 10) topHeap.poll();
+            lastHeap.offer(entry);
+            if (lastHeap.size() > 10) lastHeap.poll();
+        }
 
-        System.out.println("\nLAST 10 самых редких слов:");
-        sortedWords.stream().skip(sortedWords.size() - 10).forEach(entry ->
-                System.out.println(entry.getKey() + ": " + entry.getValue())
-        );
+        System.out.println("\nTOP 10 САМЫХ ЧАСТЫХ:");
+        //Выбор коллекции, тк нужен обратный порядок элементов из очереди
+        List<Map.Entry<String, Integer>> topList = new LinkedList<>();
+        while (!topHeap.isEmpty()) topList.addFirst(topHeap.poll());//O(1)
+        for (Map.Entry<String, Integer> entry : topList) {
+            System.out.println(entry);
+        }
+        System.out.println("\nLAST 10 САМЫХ РЕДКИХ:");
+        List<Map.Entry<String, Integer>> lastList = new LinkedList<>();
+        while (!lastHeap.isEmpty()) lastList.addFirst(lastHeap.poll());
+        for (Map.Entry<String, Integer> entry : lastList) {
+            System.out.println(entry);
+        }
+
+        System.out.printf("%nВремя: %d мс%n", System.currentTimeMillis() - startTime);
     }
 }
