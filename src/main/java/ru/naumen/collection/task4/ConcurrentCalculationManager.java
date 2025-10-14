@@ -1,5 +1,6 @@
 package ru.naumen.collection.task4;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Supplier;
@@ -7,16 +8,17 @@ import java.util.function.Supplier;
 /**
  * Класс управления расчётами
  */
+//Время выполнения зависит от самой долгой задачи
 public class ConcurrentCalculationManager<T> {
-    //Гарантия порядка
-    private final LinkedBlockingQueue<CompletableFuture<T>> futuresQueue = new LinkedBlockingQueue<>();
+    //Выбор коллекции, тк имеет блокирующие операции, операции O(1), хранит порядок
+    private final BlockingQueue<CompletableFuture<T>> futuresQueue = new LinkedBlockingQueue<>();
 
     /**
      * Добавить задачу на параллельное вычисление
      */
     public void addTask(Supplier<T> task) {
         CompletableFuture<T> future = CompletableFuture.supplyAsync(task);
-        //Сложность O(1) тк происходит вставка в известное место (порядок известен)
+        //O(1) - вставка в конец
         futuresQueue.offer(future);
     }
     /**
@@ -25,7 +27,7 @@ public class ConcurrentCalculationManager<T> {
      */
     public T getResult() {
         try {
-            //Сложность O(1) тк происходит извлечение из известного места (порядок известен)
+            //O(1) - извелечение с начала + блокировка при пустой очереди
             CompletableFuture<T> future = futuresQueue.take();
             return future.get();
         } catch (Exception e) {
