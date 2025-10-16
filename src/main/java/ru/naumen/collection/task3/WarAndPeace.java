@@ -22,7 +22,7 @@ public class WarAndPeace
     //Общая сложность: O(n) -> n - количество слов в файле
     public static void main(String[] args) {
         long startTime = System.currentTimeMillis();
-        //Выбор коллекции, тк быстрая итерация
+        //Выбор коллекции, тк быстрая итерация и вставка
         Map<String, Integer> wordCountMap = new LinkedHashMap<>();
 
         //O(n) -> n - количество слов в файле
@@ -39,12 +39,39 @@ public class WarAndPeace
         PriorityQueue<Map.Entry<String, Integer>> lastHeap =
                 new PriorityQueue<>(11, (a, b) -> b.getValue() - a.getValue());
 
+        int minTopValue = Integer.MIN_VALUE;
+        int maxLastValue = Integer.MAX_VALUE;
+
+        boolean topFull = false;
+        boolean lastFull = false;
+
         //O(n) -> n - количество уникальных слов
         for (Map.Entry<String, Integer> entry : wordCountMap.entrySet()) {
-            topHeap.offer(entry);//O(log n) -> O(1) -> размер кучи 10
-            if (topHeap.size() > 10) topHeap.poll();
-            lastHeap.offer(entry);
-            if (lastHeap.size() > 10) lastHeap.poll();
+            int count = entry.getValue();
+
+            if (!topFull) {
+                topHeap.offer(entry);
+                if (topHeap.size() == 10) {
+                    topFull = true;
+                    minTopValue = topHeap.peek().getValue();
+                }
+            } else if (count > minTopValue) {
+                topHeap.poll();//O(log n) -> O(1) -> размер кучи 10
+                topHeap.offer(entry);//O(log n) -> O(1) -> размер кучи 10
+                minTopValue = topHeap.peek().getValue();//O(1)
+            }
+
+            if (!lastFull) {
+                lastHeap.offer(entry);
+                if (lastHeap.size() == 10) {
+                    lastFull = true;
+                    maxLastValue = lastHeap.peek().getValue();
+                }
+            } else if (count < maxLastValue) {
+                lastHeap.poll();
+                lastHeap.offer(entry);
+                maxLastValue = lastHeap.peek().getValue();
+            }
         }
 
         System.out.println("\nTOP 10 САМЫХ ЧАСТЫХ:");
